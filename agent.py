@@ -7,7 +7,7 @@ import sys
 
 class Agent:
 
-    def __init__(self, type, name, age, sex, job, color, status):
+    def __init__(self, type, name, age, sex, job, color, status, risk):
         self.type = type
         self.name = name
         self.age = age
@@ -15,6 +15,7 @@ class Agent:
         self.job = job
         self.color = color
         self.status = status
+        self.risk = risk
         self.draw_location()
 
     def draw_location(self):
@@ -28,15 +29,19 @@ class Agent:
     def infect(self, agents):
         distances = []
         for agent in agents:
-            if self != agent and self.status == 'Infected':
+            if self != agent and self.status == 'Infected' and self.risk:
                 distance = self.get_distance(agent)
                 distances.append((distance, agent))
         distances.sort()
         neighbors = [agent for d, agent in distances[:num_neighbors]]
-        for i in neighbors:
-            i.color = self.color
-            print(f"Susjedi agenta {self.name} su {i.name}. Njihove boje su: {i.color}. Boja zaraznog agenta: {self.color}")
-            i.status = 'Infected'
+        for agent in neighbors:
+            if(agent.risk >= 30):
+                agent.color = self.color
+                print(f"Susjedi agenta {self.name} su {agent.name}, njihov rizik: {agent.risk}. Njihove boje su: {agent.color}. Boja zaraznog agenta: {self.color}")
+                agent.status = 'Infected'
+                agent.type = 0
+            if(agent.risk < 30):
+                agent.color = 'blue'
 
 def plot_distribution(agents, cycle_num):
     "Plot the distribution of agents after cycle_num rounds of the loop."
@@ -47,7 +52,7 @@ def plot_distribution(agents, cycle_num):
         x, y = agent.location
         x_values_0.append(x)
         y_values_0.append(y)
-        print(f"Ovo je status agenta: {agent.status}")
+        print(f"Ovo je status agenta: {agent.status}, njihova boja: {agent.color} i njihov rizik: {agent.risk}")
 
     fig, ax = plt.subplots(figsize=(8, 8))
     plot_args = {'markersize': 8, 'alpha': 0.6}
@@ -59,8 +64,9 @@ def plot_distribution(agents, cycle_num):
     x = np.array(x_values_0).reshape(-1, 1)
     y = np.array(y_values_0).reshape(-1, 1)
     scat.set_offsets(np.concatenate((x, y), axis=1))
-    scat.set_edgecolors(np.array(['red' if b.status=='Infected' else 'green' for b in agents]))
-    plt.scatter(x,y,c=np.array(['red' if b.status=='Infected' else 'green' for b in agents]))
+    scat.set_edgecolors(np.array([agent.color if agent.status=='Infected' else agent.color if agent.risk > 30 else agent.color for agent in agents]))
+    plt.scatter(x,y,c=np.array(['red' if agent.status=='Infected' else 'green' for agent in agents]))
+    plt.savefig('konacni_rezultat.png')
     plt.show()
 
 
@@ -71,11 +77,11 @@ sex_list = ['M','Z']
 job_list = ['GovtJob', 'PrivateJob', 'SelfEmployed','NoJob']
 
 # == Create a list of agents == #
-agents = [Agent(0, f"agent{i}", randint(1,90), choice(sex_list), choice(job_list), 
-color='green', status='Healthy') for i in range(num_of_type_0)]
+agents = [Agent(0, f"agent_{i}", randint(1,90), choice(sex_list), choice(job_list), 
+color='green', status='Healthy', risk=randint(1,100)) for i in range(num_of_type_0)]
 
 agents.extend(Agent(1, "infectious", randint(1,90),choice(sex_list), choice(job_list),
-color='red', status='Infected' ) for i in range(num_of_type_1))
+color='red', status='Infected', risk=randint(1,100)) for i in range(num_of_type_1))
 
 count = 1
 while True:
