@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from math import sqrt
 import numpy as np
 import sys
+from matplotlib.animation import FuncAnimation
+from IPython.display import HTML
+import csv
 
 
 class Agent:
@@ -26,22 +29,30 @@ class Agent:
         b = (self.location[1] - other.location[1])**2
         return sqrt(a + b)
 
-    def infect(self, agents):
+    def infect(self, agents, cycle_num):
         distances = []
         for agent in agents:
-            if self != agent and self.status == 'Infected' and self.risk:
+            if self != agent and self.status == 'Infected':
+            #if self != agent and self.status == 'Infected' and self.risk:
                 distance = self.get_distance(agent)
                 distances.append((distance, agent))
         distances.sort()
         neighbors = [agent for d, agent in distances[:num_neighbors]]
+
         for agent in neighbors:
-            if(agent.risk >= 30):
-                agent.color = self.color
-                print(f"Susjedi agenta {self.name} su {agent.name}, njihov rizik: {agent.risk}. Njihove boje su: {agent.color}. Boja zaraznog agenta: {self.color}")
-                agent.status = 'Infected'
-                agent.type = 0
-            if(agent.risk < 30):
-                agent.color = 'blue'
+            #if(agent.risk >= 30):
+            agent.color = self.color
+            #print(f"Susjedi agenta {self.name} su {agent.name}, njihov rizik: {agent.risk}. Njihove boje su: {agent.color}. Boja zaraznog agenta: {self.color}")
+            agent.status = 'Infected'
+            agent.type = 0
+            list = [agent.name, agent.age, agent.job, agent.sex, self.name]
+            with open('analiza_simulacije.csv', 'a', ) as myfile:
+                wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+                wr.writerow(list)
+            #if(agent.risk < 30):
+            #    agent.color = 'blue'
+
+               
 
 def plot_distribution(agents, cycle_num):
     "Plot the distribution of agents after cycle_num rounds of the loop."
@@ -64,7 +75,8 @@ def plot_distribution(agents, cycle_num):
     x = np.array(x_values_0).reshape(-1, 1)
     y = np.array(y_values_0).reshape(-1, 1)
     scat.set_offsets(np.concatenate((x, y), axis=1))
-    scat.set_edgecolors(np.array([agent.color if agent.status=='Infected' else agent.color if agent.risk > 30 else agent.color for agent in agents]))
+    scat.set_edgecolors(np.array([agent.color if agent.status=='Infected' else agent.color for agent in agents]))
+    #scat.set_edgecolors(np.array([agent.color if agent.status=='Infected' else agent.color #if agent.risk > 30 else agent.color for agent in agents]))
     plt.scatter(x,y,c=np.array(['red' if agent.status=='Infected' else 'green' for agent in agents]))
     plt.savefig('konacni_rezultat.png')
     plt.show()
@@ -83,14 +95,23 @@ color='green', status='Healthy', risk=randint(1,100)) for i in range(num_of_type
 agents.extend(Agent(1, "infectious", randint(1,90),choice(sex_list), choice(job_list),
 color='red', status='Infected', risk=randint(1,100)) for i in range(num_of_type_1))
 
-count = 1
+Figure = plt.figure()
+
+count = 0
+header = ['agent name', 'agent age', 'agent job', 'agent sex', 'infected_from']
+with open('analiza_simulacije.csv', 'a', ) as myfile:
+   wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+   wr.writerow(header)
 while True:
     print('Entering loop ', count)
     plot_distribution(agents, count)
+    #anim_created = FuncAnimation(Figure,plot_distribution(agents,count),frames=100,interval=25)    
+    #HTML(anim_created.to_jshtml())
+    #anim_created.save('animation.gif', writer='imagemagick', fps=10)
     count += 1
     for agent in agents:
-        agent.infect(agents)
-        if all (agent.status=='Infected' for agent in agents):
-            sys.exit()
+        agent.infect(agents,count)
+        #if all (agent.status=='Infected' for agent in agents):
+        #    sys.exit()
 
          
