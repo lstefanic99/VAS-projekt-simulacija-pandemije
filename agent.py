@@ -70,16 +70,18 @@ def plot_distribution(agents, cycle_num):
 
     scat = ax.scatter(x=[], y=[], c='black', linewidths=4)
     #ax.plot(x_values_0, y_values_0, 'o', c=(f"{[agent.color for agent in agents]}") , **plot_args)
-    #ax.plot(x_values_1, y_values_1, 'o', c=(f"{[agent.color for agent in agents]}"), **plot_args)
-    #ax.set_title(f'Cycle {cycle_num-1}')
+    ax.set_title(f'Cycle {cycle_num}')
     x = np.array(x_values_0).reshape(-1, 1)
     y = np.array(y_values_0).reshape(-1, 1)
     scat.set_offsets(np.concatenate((x, y), axis=1))
     scat.set_edgecolors(np.array([agent.color if agent.status=='Infected' else agent.color for agent in agents]))
     #scat.set_edgecolors(np.array([agent.color if agent.status=='Infected' else agent.color #if agent.risk > 30 else agent.color for agent in agents]))
     plt.scatter(x,y,c=np.array(['red' if agent.status=='Infected' else 'green' for agent in agents]))
-    plt.savefig('konacni_rezultat.png')
-    plt.show()
+    plt.savefig(f'konacni_rezultat_{cycle_num}.png')
+    plt.show(block=False)
+    plt.pause(3)
+    plt.close()
+         
 
 
 num_of_type_0 = 100
@@ -95,23 +97,25 @@ color='green', status='Healthy', risk=randint(1,100)) for i in range(num_of_type
 agents.extend(Agent(1, "infectious", randint(1,90),choice(sex_list), choice(job_list),
 color='red', status='Infected', risk=randint(1,100)) for i in range(num_of_type_1))
 
-Figure = plt.figure()
-
-count = 0
+iteration = 0
+end = False
 header = ['agent name', 'agent age', 'agent job', 'agent sex', 'infected_from']
 with open('analiza_simulacije.csv', 'a', ) as myfile:
    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
    wr.writerow(header)
+   
 while True:
-    print('Entering loop ', count)
-    plot_distribution(agents, count)
+    if any (agent.status!='Infected' for agent in agents):
+        print('Entering loop ', iteration)
+        plot_distribution(agents, iteration)
     #anim_created = FuncAnimation(Figure,plot_distribution(agents,count),frames=100,interval=25)    
     #HTML(anim_created.to_jshtml())
     #anim_created.save('animation.gif', writer='imagemagick', fps=10)
-    count += 1
-    for agent in agents:
-        agent.infect(agents,count)
-        #if all (agent.status=='Infected' for agent in agents):
-        #    sys.exit()
+        iteration += 1
+        for agent in agents:
+            agent.infect(agents,iteration)
 
-         
+    if all (agent.status=='Infected' for agent in agents):
+        plot_distribution(agents,iteration)
+        break
+
